@@ -1,0 +1,30 @@
+{
+  "name": "codex-repo-sync",
+  "version": "0.1.0",
+  "description": "Fetch Git repositories at Codex session start and route unsafe integration decisions to the active Codex task.",
+  "author": {
+    "name": "Matt Derman",
+    "url": "https://github.com/MDerman"
+  },
+  "repository": "https://github.com/MDerman/codex-repo-sync",
+  "keywords": [
+    "codex",
+    "git",
+    "hooks",
+    "repository-sync"
+  ],
+  "interface": {
+    "displayName": "Codex Repo Sync",
+    "shortDescription": "Fetch and safely reconcile repositories before Codex works.",
+    "longDescription": "Fetches the active Git repository when a Codex session starts, safely fast-forwards clean branches, and gives the active Codex task branch-aware instructions for merges that require judgment.",
+    "developerName": "Matt Derman",
+    "category": "Productivity",
+    "capabilities": [
+      "Lifecycle hooks",
+      "Git repository freshness"
+    ],
+    "defaultPrompt": [
+      "Show the repository freshness report for this task."
+    ]
+  }
+}
