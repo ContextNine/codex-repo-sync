@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HOOK_PATH = ROOT / "plugins" / "codex-repo-sync" / "hooks" / "session_start.py"
+HOOK_PATH = ROOT / "plugins" / "codex-repo-sync" / "scripts" / "session_start.py"
 SPEC = importlib.util.spec_from_file_location("codex_repo_sync_session_start", HOOK_PATH)
 assert SPEC and SPEC.loader
 HOOK = importlib.util.module_from_spec(SPEC)

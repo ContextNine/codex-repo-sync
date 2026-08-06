@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install or refresh the local CTX9 marketplace and codex-repo-sync plugin."""
+"""Install the managed hook and refresh the local Codex plugin."""
 
 from __future__ import annotations
 
@@ -7,6 +7,8 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+
+from managed_policy import install as install_managed_policy
 
 
 PLUGIN_NAME = "codex-repo-sync"
@@ -22,6 +24,12 @@ def main() -> int:
     marketplace_file = repo_root / ".agents" / "plugins" / "marketplace.json"
     if not marketplace_file.is_file():
         print(f"Missing marketplace manifest: {marketplace_file}", file=sys.stderr)
+        return 1
+
+    try:
+        hook_path, policy_changed = install_managed_policy(repo_root)
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        print(f"Managed-hook installation failed: {error}", file=sys.stderr)
         return 1
 
     list_result = run("codex", "plugin", "marketplace", "list")
@@ -61,7 +69,9 @@ def main() -> int:
         version = "installed"
 
     print(f"{PLUGIN_NAME} {version}")
-    print("Open /hooks in Codex and review/trust the SessionStart hook, then start a new task.")
+    print(f"Managed hook: {hook_path}")
+    print(f"System policy: {'updated' if policy_changed else 'already current'}")
+    print("No /hooks review is required. Start a new Codex thread to load the managed hook.")
     return 0
 
 
