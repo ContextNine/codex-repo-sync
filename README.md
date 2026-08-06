@@ -26,6 +26,12 @@ Then start Codex, open `/hooks`, review the `codex-repo-sync` `SessionStart` hoo
 
 Start a new task in a Git repository after installation. The hook runs for `startup` and `resume`, but not for `compact`, so it does not change repository state during mid-turn context compaction.
 
+## Fleet distribution
+
+The repository lives at `~/Code/ctx9/codex-repo-sync`. The existing CTX9 recursive code-workspace catalog discovers it automatically, so the fleet workspace reconciler can clone the same path on another registered machine. Run `python3 scripts/install.py` in that target checkout, then review and trust the hook on that machine.
+
+Private GitHub access must work noninteractively before the workspace reconciler can clone this private repository. Do not copy credentials or weaken Git authentication to bypass that gate; use the target machine's reviewed GitHub authentication flow.
+
 ## Validate
 
 ```bash
