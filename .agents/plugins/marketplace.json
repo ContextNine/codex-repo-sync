@@ -1,7 +1,7 @@
 {
-  "name": "personal",
+  "name": "ctx9",
   "interface": {
-    "displayName": "Personal"
+    "displayName": "CTX9"
   },
   "plugins": [
     {

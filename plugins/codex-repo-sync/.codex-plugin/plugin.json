@@ -1,6 +1,6 @@
 {
   "name": "codex-repo-sync",
-  "version": "0.1.0+codex.20260806144617",
+  "version": "0.1.0",
   "description": "Fetch Git repositories at Codex session start and route unsafe integration decisions to the active Codex task.",
   "author": {
     "name": "Matt Derman",

@@ -16,10 +16,28 @@ The hook deliberately uses the already-running Codex task as the judgment layer.
 
 The plugin never stashes, resets, cleans, rebases, switches branches, creates merge commits, force-updates, or discards work. A non-fast-forward integration is always performed by the active Codex task under the repository's own instructions.
 
-## Install locally
+## Install
+
+The preferred public installation surface is the `ctx9` launcher:
+
+```bash
+ctx9 install codex-repo-sync
+ctx9 doctor codex-repo-sync
+```
+
+The launcher verifies the published release checksum before invoking the repository-owned installer. Direct source checkout installation remains supported:
 
 ```bash
 python3 scripts/install.py
+```
+
+For an extracted release artifact, pin the public Git marketplace to the same release:
+
+```bash
+python3 scripts/install.py \
+  --marketplace-source MDerman/codex-repo-sync \
+  --ref v0.1.0
+python3 scripts/install.py --verify --json
 ```
 
 The installer performs the complete installation. On the first run, macOS may show one administrator-authentication dialog because `/etc/codex/requirements.toml` is protected system policy. There is no `/hooks` review step: Codex treats the `SessionStart` hook as managed and trusted by policy. Later updates replace the per-user managed hook automatically and normally need no administrator prompt.
@@ -32,9 +50,9 @@ Start a new task in a Git repository after installation. The hook runs for `star
 
 ## Fleet distribution
 
-The repository lives at `~/Code/ctx9/codex-repo-sync`. The existing CTX9 recursive code-workspace catalog discovers it automatically, so the fleet workspace reconciler can clone the same path on another registered machine. Run `python3 scripts/install.py` in that target checkout; the installer registers the managed hook without a Codex trust review.
+Matt's development checkout lives at `~/Code/ctx9/codex-repo-sync`, but neither public installation nor runtime depends on that path, a private Vault, or a CTX9 workspace checkout.
 
-Private GitHub access must work noninteractively before the workspace reconciler can clone this private repository. Fleet machines should use a unique machine-local SSH key for GitHub Git transport. Generate the key on the target, upload only its public key from an already authenticated primary machine, and keep the private key on the target. Do not share one private key or PAT across the fleet.
+Fleet development checkouts still use each machine's own Git transport and machine-local SSH identity. Public release installation does not require private GitHub access.
 
 GitHub website login, Codex login, `gh` login, and Git's noninteractive authentication are separate. The workspace reconciler deliberately disables prompts, so its real acceptance test is a noninteractive `git ls-remote` or fetch in the same SSH-launched environment—not whether a browser or interactive terminal appears signed in.
 
@@ -43,6 +61,7 @@ GitHub website login, Codex login, `gh` login, and Git's noninteractive authenti
 ```bash
 python3 -m unittest discover -s tests -v
 python3 scripts/check.py
+python3 scripts/install.py --verify --json
 ```
 
 Set `CODEX_REPO_SYNC_SKIP=1` for a one-process bypass. Set `CODEX_REPO_SYNC_TIMEOUT_SECONDS` to change the Git command timeout from its default of 45 seconds.

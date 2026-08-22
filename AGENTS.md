@@ -13,4 +13,6 @@ python3 -m unittest discover -s tests -v
 python3 scripts/check.py
 ```
 
+Release and fresh-install behavior is documented in `.docs/release-and-installation.md`. A release tag must match the stable plugin version and include the deterministic archive plus its SHA-256 file.
+
 The plugin manifest must remain at `plugins/codex-repo-sync/.codex-plugin/plugin.json`. Do not create `plugins/codex-repo-sync/hooks/hooks.json`: ordinary plugin hook discovery would reintroduce Codex's per-definition trust review. `scripts/install.py` owns managed `SessionStart` registration through `/etc/codex/requirements.toml`.
