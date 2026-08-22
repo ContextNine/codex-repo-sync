@@ -65,21 +65,58 @@ def marketplace_entries() -> list[dict[str, Any]]:
     return [entry for entry in entries if isinstance(entry, dict)]
 
 
+def matching_git_origin(path: str, desired_source: str) -> bool:
+    checkout = Path(path).expanduser()
+    if not checkout.is_dir():
+        return False
+    result = run("git", "-C", str(checkout), "remote", "get-url", "origin")
+    return result.returncode == 0 and normalize_source(result.stdout.strip()) == normalize_source(
+        desired_source
+    )
+
+
+def remove_marketplace() -> None:
+    if installed_plugin() is not None:
+        result = run("codex", "plugin", "remove", f"{PLUGIN_NAME}@{MARKETPLACE_NAME}", "--json")
+        if result.returncode != 0:
+            raise InstallError(result.stderr.strip() or result.stdout.strip())
+    result = run("codex", "plugin", "marketplace", "remove", MARKETPLACE_NAME, "--json")
+    if result.returncode != 0:
+        raise InstallError(result.stderr.strip() or result.stdout.strip())
+
+
 def ensure_marketplace(repo_root: Path, source: str | None, ref: str | None) -> None:
     desired_source = source or str(repo_root)
     matches = [entry for entry in marketplace_entries() if entry.get("name") == MARKETPLACE_NAME]
     if matches:
-        current = matches[0].get("marketplaceSource")
-        current_source = current.get("source") if isinstance(current, dict) else matches[0].get("root")
-        if not isinstance(current_source, str) or normalize_source(current_source) != normalize_source(desired_source):
+        entry = matches[0]
+        current = entry.get("marketplaceSource")
+        current_source = current.get("source") if isinstance(current, dict) else entry.get("root")
+        source_type = current.get("sourceType") if isinstance(current, dict) else None
+        source_matches = isinstance(current_source, str) and normalize_source(
+            current_source
+        ) == normalize_source(desired_source)
+        local_checkout_matches = (
+            source_type == "local"
+            and isinstance(current_source, str)
+            and source is not None
+            and matching_git_origin(current_source, desired_source)
+        )
+        if not source_matches and not local_checkout_matches:
             raise InstallError(
                 f"marketplace {MARKETPLACE_NAME!r} already points to a different source: {current_source}"
             )
-        if isinstance(current, dict) and current.get("sourceType") == "git":
-            result = run("codex", "plugin", "marketplace", "upgrade", MARKETPLACE_NAME, "--json")
-            if result.returncode != 0:
-                raise InstallError(result.stderr.strip() or result.stdout.strip())
-        return
+        cached_root = entry.get("root")
+        cached_version: str | None = None
+        if isinstance(cached_root, str):
+            try:
+                cached_version = str(plugin_manifest(Path(cached_root))["version"])
+            except InstallError:
+                pass
+        desired_version = str(plugin_manifest(repo_root)["version"])
+        if source_type == "git" and source_matches and cached_version == desired_version:
+            return
+        remove_marketplace()
 
     command = ["codex", "plugin", "marketplace", "add", desired_source]
     if ref:

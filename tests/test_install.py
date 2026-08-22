@@ -27,7 +27,7 @@ class InstallTests(unittest.TestCase):
             patch.object(INSTALL, "marketplace_entries", return_value=[]),
             patch.object(INSTALL, "run", return_value=success) as run,
         ):
-            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.0")
+            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
         run.assert_called_once_with(
             "codex",
             "plugin",
@@ -35,7 +35,7 @@ class InstallTests(unittest.TestCase):
             "add",
             "MDerman/codex-repo-sync",
             "--ref",
-            "v0.1.0",
+            "v0.1.1",
             "--json",
         )
 
@@ -50,7 +50,61 @@ class InstallTests(unittest.TestCase):
             patch.object(INSTALL, "marketplace_entries", return_value=entries),
             self.assertRaisesRegex(INSTALL.InstallError, "different source"),
         ):
-            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.0")
+            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+
+    def test_matching_local_checkout_migrates_to_exact_git_release(self) -> None:
+        entries = [
+            {
+                "name": "ctx9",
+                "root": "/tmp/local-codex-repo-sync",
+                "marketplaceSource": {
+                    "sourceType": "local",
+                    "source": "/tmp/local-codex-repo-sync",
+                },
+            }
+        ]
+        success = subprocess.CompletedProcess(["codex"], 0, "{}", "")
+        with (
+            patch.object(INSTALL, "marketplace_entries", return_value=entries),
+            patch.object(INSTALL, "matching_git_origin", return_value=True),
+            patch.object(INSTALL, "installed_plugin", return_value=None),
+            patch.object(INSTALL, "run", return_value=success) as run,
+        ):
+            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+        self.assertEqual(
+            [call.args for call in run.call_args_list],
+            [
+                ("codex", "plugin", "marketplace", "remove", "ctx9", "--json"),
+                (
+                    "codex",
+                    "plugin",
+                    "marketplace",
+                    "add",
+                    "MDerman/codex-repo-sync",
+                    "--ref",
+                    "v0.1.1",
+                    "--json",
+                ),
+            ],
+        )
+
+    def test_matching_git_release_is_a_no_op(self) -> None:
+        entries = [
+            {
+                "name": "ctx9",
+                "root": str(ROOT),
+                "marketplaceSource": {
+                    "sourceType": "git",
+                    "source": "https://github.com/MDerman/codex-repo-sync.git",
+                },
+            }
+        ]
+        with (
+            patch.object(INSTALL, "marketplace_entries", return_value=entries),
+            patch.object(INSTALL, "run") as run,
+        ):
+            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+        run.assert_not_called()
 
     def test_verify_accepts_matching_hook_policy_and_plugin(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -62,7 +116,7 @@ class InstallTests(unittest.TestCase):
             manifest = plugin / ".codex-plugin/plugin.json"
             manifest.parent.mkdir(parents=True)
             manifest.write_text(
-                json.dumps({"name": "codex-repo-sync", "version": "0.1.0"}),
+                json.dumps({"name": "codex-repo-sync", "version": "0.1.1"}),
                 encoding="utf-8",
             )
             managed = Path(temporary) / "managed"
@@ -77,7 +131,7 @@ class InstallTests(unittest.TestCase):
             with patch.object(
                 INSTALL,
                 "installed_plugin",
-                return_value={"version": "0.1.0", "enabled": True},
+                return_value={"version": "0.1.1", "enabled": True},
             ):
                 report = INSTALL.verify(root, policy, managed)
             self.assertTrue(report["ready"])

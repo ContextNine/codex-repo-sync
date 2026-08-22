@@ -6,6 +6,8 @@ Codex Repo Sync is an independently versioned CTX9 component. The GitHub reposit
 
 The installer accepts either its current checkout or an explicit Git marketplace source and ref. It installs the managed hook, owns only its marker block in `/etc/codex/requirements.toml`, installs `codex-repo-sync@ctx9`, and verifies the exact plugin version, hook digest, policy path, and enabled state.
 
+When the `ctx9` marketplace already points at a local checkout, the installer migrates it only if that checkout's Git origin exactly matches `MDerman/codex-repo-sync`. A different source is a hard collision. Git-backed upgrades replace an older pinned release with the requested exact ref; an already matching release is a no-op.
+
 The public `ctx9` launcher downloads the release archive, verifies its manifest checksum, and invokes:
 
 ```bash

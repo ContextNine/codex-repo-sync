@@ -36,7 +36,7 @@ For an extracted release artifact, pin the public Git marketplace to the same re
 ```bash
 python3 scripts/install.py \
   --marketplace-source MDerman/codex-repo-sync \
-  --ref v0.1.0
+  --ref v0.1.1
 python3 scripts/install.py --verify --json
 ```
 
