@@ -40,7 +40,7 @@ def main() -> int:
         errors.append("plugin hooks must not be auto-discovered; managed policy owns registration")
     for required in (
         root / "LICENSE",
-        root / ".docs/release-and-installation.md",
+        root / "docs/release-and-installation.md",
         root / ".github/workflows/release.yml",
     ):
         if not required.is_file():

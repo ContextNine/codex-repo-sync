@@ -65,3 +65,5 @@ python3 scripts/install.py --verify --json
 ```
 
 Set `CODEX_REPO_SYNC_SKIP=1` for a one-process bypass. Set `CODEX_REPO_SYNC_TIMEOUT_SECONDS` to change the Git command timeout from its default of 45 seconds.
+
+Release and installation details live in [`docs/`](docs/README.md).
