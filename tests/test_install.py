@@ -27,13 +27,13 @@ class InstallTests(unittest.TestCase):
             patch.object(INSTALL, "marketplace_entries", return_value=[]),
             patch.object(INSTALL, "run", return_value=success) as run,
         ):
-            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+            INSTALL.ensure_marketplace(ROOT, "ContextNine/codex-repo-sync", "v0.1.1")
         run.assert_called_once_with(
             "codex",
             "plugin",
             "marketplace",
             "add",
-            "MDerman/codex-repo-sync",
+            "ContextNine/codex-repo-sync",
             "--ref",
             "v0.1.1",
             "--json",
@@ -50,7 +50,7 @@ class InstallTests(unittest.TestCase):
             patch.object(INSTALL, "marketplace_entries", return_value=entries),
             self.assertRaisesRegex(INSTALL.InstallError, "different source"),
         ):
-            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+            INSTALL.ensure_marketplace(ROOT, "ContextNine/codex-repo-sync", "v0.1.1")
 
     def test_matching_local_checkout_migrates_to_exact_git_release(self) -> None:
         entries = [
@@ -70,7 +70,7 @@ class InstallTests(unittest.TestCase):
             patch.object(INSTALL, "installed_plugin", return_value=None),
             patch.object(INSTALL, "run", return_value=success) as run,
         ):
-            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+            INSTALL.ensure_marketplace(ROOT, "ContextNine/codex-repo-sync", "v0.1.1")
         self.assertEqual(
             [call.args for call in run.call_args_list],
             [
@@ -80,7 +80,7 @@ class InstallTests(unittest.TestCase):
                     "plugin",
                     "marketplace",
                     "add",
-                    "MDerman/codex-repo-sync",
+                    "ContextNine/codex-repo-sync",
                     "--ref",
                     "v0.1.1",
                     "--json",
@@ -95,7 +95,7 @@ class InstallTests(unittest.TestCase):
                 "root": str(ROOT),
                 "marketplaceSource": {
                     "sourceType": "git",
-                    "source": "https://github.com/MDerman/codex-repo-sync.git",
+                    "source": "https://github.com/ContextNine/codex-repo-sync.git",
                 },
             }
         ]
@@ -103,7 +103,7 @@ class InstallTests(unittest.TestCase):
             patch.object(INSTALL, "marketplace_entries", return_value=entries),
             patch.object(INSTALL, "run") as run,
         ):
-            INSTALL.ensure_marketplace(ROOT, "MDerman/codex-repo-sync", "v0.1.1")
+            INSTALL.ensure_marketplace(ROOT, "ContextNine/codex-repo-sync", "v0.1.1")
         run.assert_not_called()
 
     def test_verify_accepts_matching_hook_policy_and_plugin(self) -> None:

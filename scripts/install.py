@@ -16,7 +16,7 @@ from managed_policy import install as install_managed_policy
 
 PLUGIN_NAME = "codex-repo-sync"
 MARKETPLACE_NAME = "ctx9"
-DEFAULT_GIT_SOURCE = "MDerman/codex-repo-sync"
+DEFAULT_GIT_SOURCE = "ContextNine/codex-repo-sync"
 
 
 class InstallError(RuntimeError):
