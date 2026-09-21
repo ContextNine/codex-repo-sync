@@ -136,3 +136,15 @@ class InstallTests(unittest.TestCase):
                 report = INSTALL.verify(root, policy, managed)
             self.assertTrue(report["ready"])
             self.assertEqual(report["errors"], [])
+
+    def test_verify_uninstalled_requires_all_owned_state_to_be_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            policy = Path(temporary) / "requirements.toml"
+            policy.write_text("[features]\nhooks = true\n", encoding="utf-8")
+            with (
+                patch.object(INSTALL, "installed_plugin", return_value=None),
+                patch.object(INSTALL, "marketplace_entries", return_value=[]),
+            ):
+                report = INSTALL.verify_uninstalled(ROOT, policy, Path(temporary) / "managed")
+            self.assertTrue(report["ready"])
+            self.assertFalse(report["installed"])

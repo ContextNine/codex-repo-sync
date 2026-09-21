@@ -165,6 +165,36 @@ def install(
     return installed_hook, True
 
 
+def uninstall(
+    policy_path: Path = POLICY_PATH,
+    managed_dir: Path | None = None,
+) -> tuple[bool, bool]:
+    """Remove this plugin's hook and owned policy block while preserving other policy."""
+    managed_dir = managed_dir or Path.home() / ".local" / "share" / "codex" / "managed-hooks"
+    installed_hook = managed_dir / MANAGED_HOOK_RELATIVE
+    hook_changed = installed_hook.exists() or installed_hook.is_symlink()
+    installed_hook.unlink(missing_ok=True)
+    try:
+        installed_hook.parent.rmdir()
+    except OSError:
+        pass
+
+    existing = policy_path.read_text(encoding="utf-8") if policy_path.is_file() else ""
+    desired = _remove_owned_block(existing)
+    policy_changed = existing != desired
+    if policy_changed:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix="codex-requirements-", suffix=".toml", delete=False
+        ) as handle:
+            handle.write(desired)
+            temporary = Path(handle.name)
+        try:
+            _install_root_file(temporary, policy_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    return hook_changed, policy_changed
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(

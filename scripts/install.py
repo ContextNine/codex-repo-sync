@@ -12,6 +12,8 @@ import sys
 from typing import Any
 
 from managed_policy import install as install_managed_policy
+from managed_policy import MARKER_START
+from managed_policy import uninstall as uninstall_managed_policy
 
 
 PLUGIN_NAME = "codex-repo-sync"
@@ -75,14 +77,19 @@ def matching_git_origin(path: str, desired_source: str) -> bool:
     )
 
 
-def remove_marketplace() -> None:
+def remove_marketplace() -> bool:
+    changed = False
     if installed_plugin() is not None:
         result = run("codex", "plugin", "remove", f"{PLUGIN_NAME}@{MARKETPLACE_NAME}", "--json")
         if result.returncode != 0:
             raise InstallError(result.stderr.strip() or result.stdout.strip())
-    result = run("codex", "plugin", "marketplace", "remove", MARKETPLACE_NAME, "--json")
-    if result.returncode != 0:
-        raise InstallError(result.stderr.strip() or result.stdout.strip())
+        changed = True
+    if any(entry.get("name") == MARKETPLACE_NAME for entry in marketplace_entries()):
+        result = run("codex", "plugin", "marketplace", "remove", MARKETPLACE_NAME, "--json")
+        if result.returncode != 0:
+            raise InstallError(result.stderr.strip() or result.stdout.strip())
+        changed = True
+    return changed
 
 
 def ensure_marketplace(repo_root: Path, source: str | None, ref: str | None) -> None:
@@ -176,10 +183,39 @@ def verify(repo_root: Path, policy_path: Path, managed_dir: Path) -> dict[str, A
     }
 
 
+def verify_uninstalled(repo_root: Path, policy_path: Path, managed_dir: Path) -> dict[str, Any]:
+    manifest = plugin_manifest(repo_root)
+    installed_hook = managed_dir / PLUGIN_NAME / "session_start.py"
+    errors: list[str] = []
+    if installed_plugin() is not None:
+        errors.append(f"{PLUGIN_NAME}@{MARKETPLACE_NAME} is still installed")
+    if any(entry.get("name") == MARKETPLACE_NAME for entry in marketplace_entries()):
+        errors.append(f"{MARKETPLACE_NAME} marketplace is still installed")
+    if installed_hook.exists() or installed_hook.is_symlink():
+        errors.append("managed hook is still installed")
+    try:
+        policy = policy_path.read_text(encoding="utf-8")
+    except OSError:
+        policy = ""
+    if MARKER_START in policy:
+        errors.append("managed Codex policy block is still installed")
+    return {
+        "schema_version": 1,
+        "component": PLUGIN_NAME,
+        "version": manifest["version"],
+        "ready": not errors,
+        "installed": False,
+        "managed_hook": str(installed_hook),
+        "policy": str(policy_path),
+        "errors": errors,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--verify", action="store_true", help="verify the installed plugin and managed hook")
+    mode.add_argument("--uninstall", action="store_true", help="remove the plugin, marketplace, hook, and owned policy")
     mode.add_argument("--version", action="store_true", help="print the component version")
     parser.add_argument(
         "--marketplace-source",
@@ -204,6 +240,11 @@ def main() -> int:
     try:
         if args.verify:
             report = verify(repo_root, policy_path, managed_dir)
+        elif args.uninstall:
+            marketplace_changed = remove_marketplace()
+            hook_changed, policy_changed = uninstall_managed_policy(policy_path, managed_dir)
+            report = verify_uninstalled(repo_root, policy_path, managed_dir)
+            report["changed"] = marketplace_changed or hook_changed or policy_changed
         else:
             ensure_marketplace(repo_root, args.marketplace_source, args.ref)
             hook_path, policy_changed = install_managed_policy(repo_root, policy_path, managed_dir)
@@ -222,8 +263,9 @@ def main() -> int:
         print(f"{PLUGIN_NAME} {report['version']}")
         print(f"Managed hook: {report['managed_hook']}")
         print(f"System policy: {report['policy']}")
-        print("Status: ready" if report["ready"] else "Status: " + "; ".join(report["errors"]))
-        if not args.verify:
+        status = "removed" if args.uninstall and report["ready"] else "ready"
+        print(f"Status: {status}" if report["ready"] else "Status: " + "; ".join(report["errors"]))
+        if not args.verify and not args.uninstall:
             print("No /hooks review is required. Start a new Codex thread to load the managed hook.")
     return 0 if report["ready"] else 1
 

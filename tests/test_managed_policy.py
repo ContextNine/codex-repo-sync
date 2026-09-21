@@ -47,6 +47,25 @@ class ManagedPolicyTests(unittest.TestCase):
             self.assertTrue(hook_path.is_file())
             self.assertIn("codex-repo-sync", policy_path.read_text(encoding="utf-8"))
 
+    def test_uninstall_removes_owned_hook_and_policy_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            policy_path = root / "requirements.toml"
+            managed_dir = root / "managed-hooks"
+            hook_path, _changed = POLICY.install(ROOT, policy_path, managed_dir)
+            policy_path.write_text(
+                'allowed_approval_policies = ["never"]\n\n'
+                + policy_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            hook_changed, policy_changed = POLICY.uninstall(policy_path, managed_dir)
+            self.assertTrue(hook_changed)
+            self.assertTrue(policy_changed)
+            self.assertFalse(hook_path.exists())
+            result = policy_path.read_text(encoding="utf-8")
+            self.assertIn('allowed_approval_policies = ["never"]', result)
+            self.assertNotIn(POLICY.MARKER_START, result)
+
 
 if __name__ == "__main__":
     unittest.main()
