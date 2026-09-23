@@ -23,6 +23,11 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path("dist"))
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
+    source_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True
+    ).stdout.strip()
+    if len(source_commit) != 40:
+        raise SystemExit("source commit must be a full SHA")
     release_version = version(root)
     if args.tag != f"v{release_version}":
         raise SystemExit(f"tag {args.tag!r} does not match plugin version {release_version!r}")
@@ -47,8 +52,26 @@ def main() -> int:
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     checksum = args.output / f"{archive_name}.sha256"
     checksum.write_text(f"{digest}  {archive_name}\n", encoding="utf-8")
+    release = args.output / f"{archive_name}.release.json"
+    release.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "component": "codex-repo-sync",
+                "version": release_version,
+                "tag": args.tag,
+                "source_commit": source_commit,
+                "artifact": {"name": archive_name, "sha256": digest},
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     print(archive)
     print(checksum)
+    print(release)
     return 0
 
 

@@ -2,7 +2,7 @@
 
 Codex Repo Sync is an independently versioned CTX9 component. The GitHub repository is the source marketplace and release authority. A release tag must exactly equal `v<plugin version>`.
 
-`scripts/build_release.py` creates a deterministic source archive and SHA-256 file from the tagged commit. The release workflow runs tests and structural checks before attaching both files to a GitHub Release.
+`scripts/build_release.py` creates a deterministic source archive, SHA-256 file, and release record naming the full tagged source commit. The release workflow runs tests and structural checks, attests all three files, and attaches them to the GitHub Release.
 
 The installer accepts either its current checkout or an explicit Git marketplace source and ref. It installs the managed hook, owns only its marker block in `/etc/codex/requirements.toml`, installs `codex-repo-sync@ctx9`, and verifies the exact plugin version, hook digest, policy path, and enabled state. Its uninstall mode removes the plugin, its marketplace, managed hook, and owned policy block while preserving unrelated Codex policy.
 

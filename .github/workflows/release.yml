@@ -6,7 +6,10 @@ on:
       - "v*"
 
 permissions:
+  artifact-metadata: write
+  attestations: write
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -19,6 +22,10 @@ jobs:
       - run: python3 -m unittest discover -s tests -v
       - run: python3 scripts/check.py
       - run: python3 scripts/build_release.py --tag "$GITHUB_REF_NAME" --output dist
+      - name: Attest release files
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*
       - run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag
         env:
           GH_TOKEN: ${{ github.token }}
