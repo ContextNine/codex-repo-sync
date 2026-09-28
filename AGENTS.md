@@ -2,6 +2,8 @@
 
 This repository owns the `codex-repo-sync` Codex plugin.
 
+- Always work on master unless instructed not to.
+
 Before task edits, fetch the configured upstream and compare it with `HEAD`. Fast-forward only when the checkout is clean and strictly behind. Never stash, reset, clean, rebase, force-update, or discard unrelated work.
 
 Keep the hook and managed-policy installer standard-library-only and compatible with current macOS and Linux Python 3. The supported install path is `python3 scripts/install.py`; agents must complete it without asking the user to review the hook in `/hooks`. A first-time operating-system administrator prompt for `/etc/codex/requirements.toml` is distinct from Codex hook trust.
